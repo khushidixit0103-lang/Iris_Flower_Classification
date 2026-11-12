@@ -1,0 +1,186 @@
+{
+  "name": "Iris Flower Classification Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "iris-classify",
+        "formTitle": "🌸 Iris Flower Classification System",
+        "formDescription": "Artificial Intelligence Academic Project — MCA 7th Semester\nDecision Tree Machine Learning Classification Orchestrated via n8n.\n\nPlease enter the four floral dimensions (in centimeters) below to predict the Iris species.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Sepal Length (cm)",
+              "fieldType": "number",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Sepal Width (cm)",
+              "fieldType": "number",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Petal Length (cm)",
+              "fieldType": "number",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Petal Width (cm)",
+              "fieldType": "number",
+              "requiredField": true
+            }
+          ]
+        },
+        "responseMode": "lastNode",
+        "options": {
+          "buttonLabel": "🔍 Classify Iris Flower"
+        }
+      },
+      "id": "11111111-1111-4111-a111-111111111111",
+      "name": "Node 1: Form Trigger",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [200, 300],
+      "webhookId": "iris-classify-form"
+    },
+    {
+      "parameters": {
+        "jsCode": "// NODE 2: INPUT VALIDATION & SANITIZATION\n// Validates that all measurements are positive numbers within realistic biological bounds\n\nconst item = $input.first().json;\n\n// Extract measurements with flexible fallbacks\nconst sl = parseFloat(item[\"Sepal Length (cm)\"] ?? item.sepal_length);\nconst sw = parseFloat(item[\"Sepal Width (cm)\"] ?? item.sepal_width);\nconst pl = parseFloat(item[\"Petal Length (cm)\"] ?? item.petal_length);\nconst pw = parseFloat(item[\"Petal Width (cm)\"] ?? item.petal_width);\n\nconst errors = [];\n\nif (isNaN(sl)) errors.push(\"Sepal Length must be a valid number.\");\nelse if (sl <= 0) errors.push(\"Sepal Length must be greater than 0 cm.\");\nelse if (sl > 25) errors.push(\"Sepal Length exceeds realistic biological range (max 25 cm).\");\n\nif (isNaN(sw)) errors.push(\"Sepal Width must be a valid number.\");\nelse if (sw <= 0) errors.push(\"Sepal Width must be greater than 0 cm.\");\nelse if (sw > 25) errors.push(\"Sepal Width exceeds realistic biological range (max 25 cm).\");\n\nif (isNaN(pl)) errors.push(\"Petal Length must be a valid number.\");\nelse if (pl <= 0) errors.push(\"Petal Length must be greater than 0 cm.\");\nelse if (pl > 25) errors.push(\"Petal Length exceeds realistic biological range (max 25 cm).\");\n\nif (isNaN(pw)) errors.push(\"Petal Width must be a valid number.\");\nelse if (pw <= 0) errors.push(\"Petal Width must be greater than 0 cm.\");\nelse if (pw > 25) errors.push(\"Petal Width exceeds realistic biological range (max 25 cm).\");\n\nconst isValid = errors.length === 0;\n\nreturn [{\n  json: {\n    isValid: isValid,\n    errors: errors,\n    sepal_length: sl,\n    sepal_width: sw,\n    petal_length: pl,\n    petal_width: pw\n  }\n}];"
+      },
+      "id": "22222222-2222-4222-a222-222222222222",
+      "name": "Node 2: Input Validation",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.isValid }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "33333333-3333-4333-a333-333333333333",
+      "name": "Is Input Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:5000/predict",
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "sepal_length",
+              "value": "={{ $json.sepal_length }}"
+            },
+            {
+              "name": "sepal_width",
+              "value": "={{ $json.sepal_width }}"
+            },
+            {
+              "name": "petal_length",
+              "value": "={{ $json.petal_length }}"
+            },
+            {
+              "name": "petal_width",
+              "value": "={{ $json.petal_width }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "44444444-4444-4444-a444-444444444444",
+      "name": "Node 3: HTTP Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [920, 200],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// NODE 4: RESULT PROCESSING\n// Extracts species prediction, confidence, submitted measurements, and formats a friendly report\n\nconst response = $input.first().json;\n\n// Handle connection error or failure from API\nif (response.error || response.status === 'error' || !response.predicted_species) {\n  const errMsg = response.message || response.error || 'Failed to connect to Python Model API at http://127.0.0.1:5000.';\n  return [{\n    json: {\n      success: false,\n      title: '❌ Classification Failed',\n      message: errMsg,\n      recommendation: 'Ensure that the Python Prediction API (api/app.py) is running on port 5000.'\n    }\n  }];\n}\n\nconst species = response.predicted_species;\nconst confidence = response.confidence_percentage ?? 100.0;\nconst measurements = response.submitted_measurements;\nconst explanation = response.explanation || '';\n\n// Determine species emoji and icon\nlet emoji = '🌺';\nif (species === 'Iris Setosa') emoji = '🌸';\nelse if (species === 'Iris Versicolor') emoji = '🌿';\nelse if (species === 'Iris Virginica') emoji = '🪻';\n\nconst displayHtml = `\n<div style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 2px solid #4CAF50; border-radius: 12px; background: #f9fbf9;\">\n  <h2 style=\"color: #2E7D32; text-align: center; margin-top: 0;\">${emoji} Prediction Result: ${species}</h2>\n  <hr style=\"border: none; border-top: 1px solid #C8E6C9; margin: 15px 0;\">\n  <p><strong>Predicted Species:</strong> <span style=\"font-size: 1.2em; color: #1B5E20; font-weight: bold;\">${species}</span></p>\n  <p><strong>Confidence Score:</strong> <span style=\"background: #E8F5E9; padding: 3px 8px; border-radius: 6px; font-weight: bold; color: #2E7D32;\">${confidence}%</span></p>\n  <p><strong>Machine Learning Model:</strong> Decision Tree Classifier (Scikit-Learn)</p>\n  \n  <h4 style=\"color: #2E7D32; margin-bottom: 8px;\">Submitted Flower Measurements:</h4>\n  <table style=\"width: 100%; border-collapse: collapse; margin-bottom: 15px;\">\n    <tr style=\"background: #E8F5E9;\">\n      <th style=\"border: 1px solid #C8E6C9; padding: 8px; text-align: left;\">Measurement</th>\n      <th style=\"border: 1px solid #C8E6C9; padding: 8px; text-align: right;\">Value (cm)</th>\n    </tr>\n    <tr>\n      <td style=\"border: 1px solid #C8E6C9; padding: 8px;\">Sepal Length</td>\n      <td style=\"border: 1px solid #C8E6C9; padding: 8px; text-align: right;\">${measurements.sepal_length} cm</td>\n    </tr>\n    <tr style=\"background: #fdfdfd;\">\n      <td style=\"border: 1px solid #C8E6C9; padding: 8px;\">Sepal Width</td>\n      <td style=\"border: 1px solid #C8E6C9; padding: 8px; text-align: right;\">${measurements.sepal_width} cm</td>\n    </tr>\n    <tr>\n      <td style=\"border: 1px solid #C8E6C9; padding: 8px;\">Petal Length</td>\n      <td style=\"border: 1px solid #C8E6C9; padding: 8px; text-align: right;\">${measurements.petal_length} cm</td>\n    </tr>\n    <tr style=\"background: #fdfdfd;\">\n      <td style=\"border: 1px solid #C8E6C9; padding: 8px;\">Petal Width</td>\n      <td style=\"border: 1px solid #C8E6C9; padding: 8px; text-align: right;\">${measurements.petal_width} cm</td>\n    </tr>\n  </table>\n  \n  <div style=\"background: #E8F5E9; padding: 12px; border-left: 4px solid #4CAF50; border-radius: 4px; margin-bottom: 15px;\">\n    <strong>Botanical Explanation:</strong> ${explanation}\n  </div>\n  \n  <p style=\"font-size: 0.85em; color: #666; text-align: center; margin-bottom: 0;\">\n    Orchestration: <strong>n8n Workflow Automation</strong> | Model Engine: <strong>Scikit-Learn DecisionTree</strong>\n  </p>\n</div>\n`;\n\nreturn [{\n  json: {\n    success: true,\n    predicted_species: species,\n    confidence_percentage: confidence,\n    submitted_measurements: measurements,\n    explanation: explanation,\n    model: 'Decision Tree Classifier',\n    html_response: displayHtml\n  }\n}];"
+      },
+      "id": "55555555-5555-4555-a555-555555555555",
+      "name": "Node 4: Result Processing",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1160, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "// NODE 2b: FORMAT VALIDATION ERRORS\nconst item = $input.first().json;\nconst errorList = item.errors || [\"Invalid measurement provided.\"];\n\nconst errorHtml = `\n<div style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 2px solid #E53935; border-radius: 12px; background: #FFEBEE;\">\n  <h2 style=\"color: #C62828; text-align: center; margin-top: 0;\">⚠️ Input Validation Failed</h2>\n  <hr style=\"border: none; border-top: 1px solid #FFCDD2; margin: 15px 0;\">\n  <p>Please correct the following errors and submit the form again:</p>\n  <ul style=\"color: #B71C1C;\">\n    ${errorList.map(e => `<li>${e}</li>`).join('')}\n  </ul>\n  <p style=\"font-size: 0.9em; color: #555;\">Note: All measurements must be positive numbers between 0.1 cm and 25.0 cm.</p>\n</div>\n`;\n\nreturn [{\n  json: {\n    success: false,\n    errors: errorList,\n    html_response: errorHtml\n  }\n}];"
+      },
+      "id": "66666666-6666-4666-a666-666666666666",
+      "name": "Format Validation Error",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [920, 420]
+    }
+  ],
+  "connections": {
+    "Node 1: Form Trigger": {
+      "main": [
+        [
+          {
+            "node": "Node 2: Input Validation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Node 2: Input Validation": {
+      "main": [
+        [
+          {
+            "node": "Is Input Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Input Valid?": {
+      "main": [
+        [
+          {
+            "node": "Node 3: HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format Validation Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Node 3: HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Node 4: Result Processing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
