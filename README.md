@@ -114,12 +114,6 @@ Iris-Flower-Classification/
 │   ├── Working_Procedure.md               # Step-by-step operational guide
 │   ├── Algorithm_Explanation.md           # Decision Tree & Gini Impurity theory
 │   └── System_Architecture.md             # Multi-tier architectural specifications
-├── viva/
-│   ├── Project_Explanation.md             # Executive project summary for faculty
-│   ├── Code_Explanation.md                # Code walkthrough
-│   ├── Viva_Questions.md                  # 35 likely viva questions with answers
-│   ├── Workflow_Explanation.md            # Node-by-node workflow guide
-│   └── Demonstration_Guide.md             # 3-5 minute presentation script & checklist
 ├── screenshots/
 │   ├── decision_tree_structure.png        # Exported Decision Tree structure diagram
 │   └── README.md                          # Screenshot instructions
