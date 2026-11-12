@@ -5,7 +5,6 @@
 [![Flask](https://img.shields.io/badge/Flask-3.1.3-black.svg)](https://flask.palletsprojects.com/)
 [![n8n](https://img.shields.io/badge/n8n-Workflow%20Automation-FF6D5A.svg)](https://n8n.io/)
 [![Accuracy](https://img.shields.io/badge/Accuracy-93.33%25-brightgreen.svg)]()
-[![License](https://img.shields.io/badge/License-Academic%20Assessment-lightgrey.svg)]()
 
 > **Master of Computer Applications (MCA) — 7th Semester**  
 > **Artificial Intelligence: Third Assessment**  
@@ -184,18 +183,3 @@ n8n start
 | **6. Negative Value** | `5.1, 3.5, -1.4, 0.2` | 400 Bad Request | 400 Bad Request ("Must be strictly positive numbers > 0") | ✅ PASS |
 | **7. API Health** | `GET /health` | 200 OK Healthy | `{"status": "healthy", "model_loaded": true}` | ✅ PASS |
 | **8. 404 Route** | `GET /invalid_path` | 404 Not Found | 404 JSON Error Handled Gracefully | ✅ PASS |
-
----
-
-## 🎓 Academic Viva Questions & Presentation
-
-For complete viva readiness:
-- Review `viva/Viva_Questions.md` for **35 standard viva questions with simple explanations**.
-- Practice the **3-5 minute presentation script** in `viva/Demonstration_Guide.md`.
-- Review the **line-by-line code walkthrough** in `viva/Code_Explanation.md`.
-
----
-
-## 📄 License & Attribution
-
-This project is submitted in partial fulfillment of the **Artificial Intelligence Third Assessment** for the **MCA 7th Semester**. Open-source for academic and educational evaluation.
