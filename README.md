@@ -134,8 +134,8 @@ Iris-Flower-Classification/
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/Khushie-25/Iris-Flower-Classification.git
-cd Iris-Flower-Classification
+git clone https://github.com/khushidixit0103-lang/Iris_Flower_Classification.git
+cd Iris_Flower_Classification
 ```
 
 ### 2. Set Up Python Virtual Environment
